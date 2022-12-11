@@ -18,7 +18,7 @@ const bucketName = 'minutescypher';
 const contents = 'these are my contents aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 // The new ID for your GCS file
-const destFileName = 'your-new-file-name';
+const destFileName = 'tada.mp3';
 
 // Imports the Google Cloud Node.js client library
 // import Storage from 'google-cloud/storage';
@@ -29,7 +29,7 @@ const storage = new Storage();
 
 async function uploadFromMemory() {
   await storage.bucket(bucketName).file(destFileName).save(contents);
-
+  await storage.bucket(bucketName).file(destFileName).makePublic();
   console.log(
     `${destFileName} with contents ${contents} uploaded to ${bucketName}.`
   );

@@ -1,5 +1,9 @@
 const axios = require("axios");
+const { Storage } = require('@google-cloud/storage');
 
+// Creates a client
+const storage = new Storage();
+// const poll = require("./tr.js");
 const assembly = axios.create({
     baseURL: "https://api.assemblyai.com/v2",
     headers: {
@@ -8,30 +12,41 @@ const assembly = axios.create({
     },
 });
 
-async function transcript() {
-    var result
-    await assembly
-        .post("/transcript", {
-            audio_url: "https://storage.cloud.google.com/minutescypher/Zarre%20Zarre%20Mein%20Tera%20%20Aab%20o%20tabe%20chashm%20hai.mp3"
-        })
-        .then((res) => {
-            console.log(res.data);
-            const id = res.data.ID
-            while (res.data.status != 'completed') {
-                assembly
-                    .get(`/transcript/${id}`)
-                    .then((res) => {
-                        console.log(res.data);
-                        result = res.data;
-                    })
-                    .catch((err) => console.error(err));
-            }
-        })
-        .catch((err) => console.error(err));
+let fetchReport = async(id) => {
+    const resp = await assembly.get(`/transcript/${id}`);
+    console.log(resp.data.status);
+    return resp;
+}
 
-    console.log(
-        `${destFileName} with contents ${contents} uploaded to ${bucketName}.`
-    );
+let validate = result => result.data.status == 'processing' || result.data.status == "queued" ;
+
+const poll = async (fn, fnCondition, ms, id) => {
+    let result = await fn(id);
+    while (fnCondition(result)) {
+        await wait(ms);
+        result = await fn(id);
+        console.log(result.data.status)
+    }
+    return result;
+};
+
+const wait = async (ms = 1000) => {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+};
+
+async function transcript() {
+    await storage.bucket("minutescypher").file("a.mp3").makePublic();
+    const res = await assembly
+        .post("/transcript", {
+            audio_url: "https://storage.googleapis.com/storage/v1/b/minutescypher/o/a.mp3?alt=media"
+        })
+    console.log(res.data);
+    const id = res.data.id
+    console.log(id);
+    let resp = await poll(fetchReport,validate,3000,id)
+    console.log(resp.data)
 }
 
 transcript().catch(console.error);
