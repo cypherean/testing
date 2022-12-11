@@ -86,13 +86,15 @@ app.post('/audio', type, async function (req, res) {
 
     let bucketName = "minutescypher";
     const options = {
-        destination: new Date(Date.now()).toUTCString() + ".mp3"
+        destination: req.body.Filename,
     }
     await storage.bucket(bucketName).upload(req.file.path, options);
     await storage.bucket(bucketName).file(options.destination).makePublic();
     console.log("file is uploaded and made public");
     let resp = await transcript(req.body, options.destination);
-    res.send(resp); 
+    console.log("Aviral")
+    console.log(resp)
+    res.json(resp); 
 });
 // Launch server
 app.listen(5050, function () {
