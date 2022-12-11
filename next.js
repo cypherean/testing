@@ -71,6 +71,7 @@ async function transcript(req, fn) {
     console.log(id);
     let resp = await poll(fetchReport, validate, 3000, id)
     console.log(resp.data)
+    return resp.data
 }
 
 var upload = multer({ dest: __dirname + '/public/uploads/' });
@@ -90,8 +91,8 @@ app.post('/audio', type, async function (req, res) {
     await storage.bucket(bucketName).upload(req.file.path, options);
     await storage.bucket(bucketName).file(options.destination).makePublic();
     console.log("file is uploaded and made public");
-    await transcript(req.body, options.destination);
-    res.send('HI RCSer');
+    let resp = await transcript(req.body, options.destination);
+    res.send(resp); 
 });
 // Launch server
 app.listen(5050, function () {
