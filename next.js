@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { Storage } = require('@google-cloud/storage');
 var express = require('express');
-var multer  = require('multer');
+var multer = require('multer');
 var app = express();
 app.use(express.static('public'));
 
@@ -17,13 +17,13 @@ const assembly = axios.create({
     },
 });
 
-let fetchReport = async(id) => {
+let fetchReport = async (id) => {
     const resp = await assembly.get(`/transcript/${id}`);
     console.log(resp.data.status);
     return resp;
 }
 
-let validate = result => result.data.status == 'processing' || result.data.status == "queued" ;
+let validate = result => result.data.status == 'processing' || result.data.status == "queued";
 
 const poll = async (fn, fnCondition, ms, id) => {
     let result = await fn(id);
@@ -41,15 +41,35 @@ const wait = async (ms = 1000) => {
     });
 };
 
-async function transcript(fn) {
+async function transcript(req, fn) {
     const res = await assembly
         .post("/transcript", {
-            audio_url: "https://storage.googleapis.com/storage/v1/b/minutescypher/o/"+fn+"?alt=media"
+            audio_url: "https://storage.googleapis.com/storage/v1/b/minutescypher/o/" + fn + "?alt=media",
+            // Sentiment Analysis
+            sentiment_analysis: req.Sentimental,
+            // Summarization
+            summarization: req.Summarisation,
+            summary_model: "informative",
+            summary_type: "bullets",
+            // Topic Detection
+            iab_categories: req.Topic,
+            // Content Moderation
+            content_safety: req.Moderation,
+            // Detect imp phrases
+            auto_highlights: req.Phrases,
+            // PII redaction
+            redact_pii: req.PII,
+            redact_pii_policies: [
+                "money_amount",
+                "number_sequence",
+                "person_name",
+                "banking_information"
+            ]
         })
     console.log(res.data);
     const id = res.data.id
     console.log(id);
-    let resp = await poll(fetchReport,validate,3000,id)
+    let resp = await poll(fetchReport, validate, 3000, id)
     console.log(resp.data)
 }
 
@@ -70,7 +90,7 @@ app.post('/audio', type, async function (req, res) {
     await storage.bucket(bucketName).upload(req.file.path, options);
     await storage.bucket(bucketName).file(options.destination).makePublic();
     console.log("file is uploaded and made public");
-    await transcript(options.destination);
+    await transcript(req.body, options.destination);
     res.send('HI RCSer');
 });
 // Launch server
