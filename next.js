@@ -1,5 +1,10 @@
 const axios = require("axios");
 const { Storage } = require('@google-cloud/storage');
+var express = require('express');
+var multer  = require('multer');
+var app = express();
+app.use(express.static('public'));
+
 
 // Creates a client
 const storage = new Storage();
@@ -36,11 +41,10 @@ const wait = async (ms = 1000) => {
     });
 };
 
-async function transcript() {
-    await storage.bucket("minutescypher").file("a.mp3").makePublic();
+async function transcript(fn) {
     const res = await assembly
         .post("/transcript", {
-            audio_url: "https://storage.googleapis.com/storage/v1/b/minutescypher/o/a.mp3?alt=media"
+            audio_url: "https://storage.googleapis.com/storage/v1/b/minutescypher/o/"+fn+"?alt=media"
         })
     console.log(res.data);
     const id = res.data.id
@@ -49,4 +53,27 @@ async function transcript() {
     console.log(resp.data)
 }
 
-transcript().catch(console.error);
+var upload = multer({ dest: __dirname + '/public/uploads/' });
+var type = upload.single('upl');
+
+app.get('/', function (req, res) {
+    res.send('Welcome Home');
+});
+app.post('/audio', type, async function (req, res) {
+    console.log(req.body);
+    console.log(req.file);
+
+    let bucketName = "minutescypher";
+    const options = {
+        destination: new Date(Date.now()).toUTCString() + ".mp3"
+    }
+    await storage.bucket(bucketName).upload(req.file.path, options);
+    await storage.bucket(bucketName).file(options.destination).makePublic();
+    console.log("file is uploaded and made public");
+    await transcript(options.destination);
+    res.send('HI RCSer');
+});
+// Launch server
+app.listen(5050, function () {
+    console.log('Example app listening on port 5050!');
+});

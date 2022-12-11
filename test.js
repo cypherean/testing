@@ -28,7 +28,7 @@ const { Storage } = require('@google-cloud/storage');
 const storage = new Storage();
 
 async function uploadFromMemory() {
-  await storage.bucket(bucketName).file(destFileName).save(contents);
+  await storage.bucket(bucketName).upload(filePath, options);
   await storage.bucket(bucketName).file(destFileName).makePublic();
   console.log(
     `${destFileName} with contents ${contents} uploaded to ${bucketName}.`

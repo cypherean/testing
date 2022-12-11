@@ -10,6 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "@google-cloud/storage": "^6.8.0",
-    "axios": "^1.2.1"
+    "axios": "^1.2.1",
+    "express": "^4.18.2",
+    "multer": "*",
+    "server": "^1.0.38"
   }
 }
